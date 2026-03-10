@@ -559,6 +559,106 @@ func foregroundColorString(c Color) string {
 	return attrDefaultForegroundColor
 }
 
+// returns an ansi code for a 24bit "true color"
+func Original(c color.Color) string {
+	// "38;2;<r>;<g>;<b>"
+	r, g, b, _ := c.RGBA()
+	return "38;2;" +
+		strconv.FormatUint(uint64(shift(r)), 10) + ";" +
+		strconv.FormatUint(uint64(shift(g)), 10) + ";" +
+		strconv.FormatUint(uint64(shift(b)), 10)
+}
+
+func StringsBuilder(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+
+	// grow builder by 16:
+	// + 5 (prefix bytes)
+	// + 9 (three bytes for each uint, since they're 0-255 (due to shift))
+	// + 2 (two semicolon seperators)
+	seq := strings.Builder{}
+	seq.Grow(16)
+
+	seq.WriteString("38;2;")
+	seq.WriteString(strconv.FormatUint(uint64(shift(r)), 10))
+	seq.WriteString(";")
+	seq.WriteString(strconv.FormatUint(uint64(shift(g)), 10))
+	seq.WriteString(";")
+	seq.WriteString(strconv.FormatUint(uint64(shift(b)), 10))
+
+	return seq.String()
+}
+
+// lut is a lookup table for ascii representations of integers 0-255.
+var lut [256]string
+
+// fill the lookup table.
+func init() {
+	for i := range lut {
+		lut[i] = strconv.FormatUint(uint64(i), 10)
+	}
+}
+
+func LUT(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+	return "38;2;" +
+		lut[shift(r)] + ";" +
+		lut[shift(g)] + ";" +
+		lut[shift(b)]
+}
+
+func Slice(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+
+	// alloc 16 bytes to buffer:
+	// + 5 (prefix bytes)
+	// + 9 (three bytes for each uint, since they're 0-255 (due to shift))
+	// + 2 (two semicolon seperators)
+	buf := make([]byte, 0, 16)
+	buf = append(buf, "38;2;"...)
+	buf = strconv.AppendUint(buf, uint64(shift(r)), 10)
+	buf = append(buf, ";"...)
+	buf = strconv.AppendUint(buf, uint64(shift(g)), 10)
+	buf = append(buf, ";"...)
+	buf = strconv.AppendUint(buf, uint64(shift(b)), 10)
+	return string(buf)
+}
+
+func StringsBuilderLUT(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+
+	// grow builder by 16:
+	// + 5 (prefix bytes)
+	// + 9 (three bytes for each uint, since they're 0-255 (due to shift))
+	// + 2 (two semicolon seperators)
+	var seq strings.Builder
+	seq.Grow(16)
+	seq.WriteString("38;2;")
+	seq.WriteString(lut[shift(r)])
+	seq.WriteByte(';')
+	seq.WriteString(lut[shift(g)])
+	seq.WriteByte(';')
+	seq.WriteString(lut[shift(b)])
+	return seq.String()
+}
+
+func SliceLUT(c color.Color) string {
+	r, g, b, _ := c.RGBA()
+
+	// alloc 16 bytes to buffer:
+	// + 5 (prefix bytes)
+	// + 9 (three bytes for each uint, since they're 0-255 (due to shift))
+	// + 2 (two semicolon seperators)
+	buf := make([]byte, 0, 16)
+	buf = append(buf, "38;2;"...)
+	buf = append(buf, lut[shift(r)]...)
+	buf = append(buf, ";"...)
+	buf = append(buf, lut[shift(g)]...)
+	buf = append(buf, ";"...)
+	buf = append(buf, lut[shift(b)]...)
+	return string(buf)
+}
+
 // backgroundColorString returns the style SGR attribute for the given
 // background color.
 // See: https://en.wikipedia.org/wiki/ANSI_escape_code#SGR_(Select_Graphic_Rendition)_parameters

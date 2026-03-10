@@ -63,3 +63,43 @@ func BenchmarkStyle(b *testing.B) {
 			String()
 	}
 }
+
+func BenchmarkForegroundColorString(b *testing.B) {
+	color := color.RGBA{255, 255, 255, 255}
+
+	b.Run("original", func(b *testing.B) {
+		for b.Loop() {
+			ansi.Original(color)
+		}
+	})
+
+	b.Run("strBuilder", func(b *testing.B) {
+		for b.Loop() {
+			ansi.StringsBuilder(color)
+		}
+	})
+
+	b.Run("LUT", func(b *testing.B) {
+		for b.Loop() {
+			ansi.LUT(color)
+		}
+	})
+
+	b.Run("slice", func(b *testing.B) {
+		for b.Loop() {
+			ansi.Slice(color)
+		}
+	})
+
+	b.Run("strBuilderLUT", func(b *testing.B) {
+		for b.Loop() {
+			ansi.StringsBuilderLUT(color)
+		}
+	})
+
+	b.Run("sliceLUT", func(b *testing.B) {
+		for b.Loop() {
+			ansi.SliceLUT(color)
+		}
+	})
+}
